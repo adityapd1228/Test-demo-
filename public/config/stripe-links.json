@@ -1,0 +1,9 @@
+{
+  "mode": "demo",
+  "links": {
+    "basic": "/demo-checkout/basic",
+    "starter": "/demo-checkout/starter",
+    "pro": "/demo-checkout/pro",
+    "enterprise": "/contact"
+  }
+}

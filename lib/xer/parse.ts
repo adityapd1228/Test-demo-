@@ -1,0 +1,11 @@
+export type XERActivity = { id:string; name:string; start?:string; finish?:string; float?:number; };
+function toISO(d?:string){ if(!d)return; const m=d.match(/^\d{4}-\d{2}-\d{2}$/); if(m) return d; const mdy=d.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/); if(mdy){const mm=mdy[1].padStart(2,'0');const dd=mdy[2].padStart(2,'0');const yy=mdy[3].length===2?'20'+mdy[3]:mdy[3];return `${yy}-${mm}-${dd}`;} return d; }
+export function parseXER_TASK(text:string): XERActivity[]{ const lines=text.split(/\r?\n/); let header:string[]|null=null; const out:XERActivity[]=[];
+for(const ln of lines){ if(/^TASK(\t|,)/i.test(ln)){ const parts=ln.split(/\t|,/); const looksHeader=parts.some(p=>/task_?id|task_?name|early_?start/i.test(p)); if(looksHeader){ header=parts.map(s=>s.trim().toLowerCase()); break; } } }
+function idx(name:string,aliases:string[]){ if(!header) return -1; for(const a of aliases){ const i=header.indexOf(a); if(i!==-1) return i; } return -1; }
+for(const ln of lines){ if(!/^TASK(\t|,)/i.test(ln)) continue; const parts=ln.split(/\t|,/).map(s=>s.trim()); if(header){ const iId=idx('task_id',['task_id','taskid','id']); const iNm=idx('task_name',['task_name','taskname','name']); if(iId===-1||iNm===-1) continue; const iES=idx('early_start',['early_start','early_start_date','start_date','start']); const iEF=idx('early_finish',['early_finish','early_finish_date','finish_date','finish']); const iTF=idx('total_float',['total_float','total_float_hr_cnt','free_float','float']);
+  const id=parts[iId]||''; const name=parts[iNm]||''; const start=iES!==-1?toISO(parts[iES]):undefined; const finish=iEF!==-1?toISO(parts[iEF]):undefined; const tf=iTF!==-1?Number(parts[iTF]):undefined;
+  if(id) out.push({id,name,start,finish,float:(Number.isFinite(tf as number)?(tf as number):undefined)}); continue; }
+  const id=parts[1]; const name=parts[2]; const start=toISO(parts[3]); const finish=toISO(parts[4]); const tfRaw=Number(parts[5]); if(id&&name) out.push({id,name,start,finish,float:(Number.isFinite(tfRaw)?tfRaw:undefined)});
+}
+return out; }
